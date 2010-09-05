@@ -8,6 +8,9 @@
 
 #import <UIKit/UIKit.h>
 
+#define SPLITVIEW_WILL_CHANGE @"SPLITVIEW_WILL_CHANGE"
+#define SPLITVIEW_DID_CHANGE @"SPLITVIEW_DID_CHANGE"
+
 typedef enum _MGSplitViewDividerStyle {
 	// These names have been chosen to be conceptually similar to those of NSSplitView on Mac OS X.
 	MGSplitViewDividerStyleThin			= 0, // Thin divider, like UISplitViewController (default).

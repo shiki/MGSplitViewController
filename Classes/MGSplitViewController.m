@@ -22,7 +22,7 @@
 
 #define MG_ANIMATION_CHANGE_SPLIT_ORIENTATION	@"ChangeSplitOrientation"	// Animation ID for internal use.
 #define MG_ANIMATION_CHANGE_SUBVIEWS_ORDER		@"ChangeSubviewsOrder"	// Animation ID for internal use.
-
+#define MG_ANIMATION_TOGGLE @"ANIMATION_TOGGLE"
 
 @interface MGSplitViewController (MGPrivateMethods)
 
@@ -72,7 +72,7 @@
 
 - (BOOL)isLandscape
 {
-	return UIInterfaceOrientationIsLandscape(self.interfaceOrientation);
+	return UIInterfaceOrientationIsLandscape([[UIApplication sharedApplication] statusBarOrientation]);
 }
 
 
@@ -85,7 +85,7 @@
 
 - (BOOL)shouldShowMaster
 {
-	return [self shouldShowMasterForInterfaceOrientation:self.interfaceOrientation];
+	return [self shouldShowMasterForInterfaceOrientation:[[UIApplication sharedApplication] statusBarOrientation]];
 }
 
 
@@ -246,7 +246,8 @@
 	float height = fullScreenRect.size.height;
 	
 	// Correct for orientation.
-	if (UIInterfaceOrientationIsLandscape(theOrientation)) {
+	if (UIInterfaceOrientationIsLandscape(theOrientation)) 
+    {
 		width = height;
 		height = fullScreenRect.size.width;
 	}
@@ -267,13 +268,16 @@
 	
 	// Layout the master, detail and divider views appropriately, adding/removing subviews as needed.
 	// First obtain relevant geometry.
-	CGSize fullSize = [self splitViewSizeForOrientation:theOrientation];
+	CGSize fullSize = self.view.bounds.size; // [self splitViewSizeForOrientation:theOrientation];
 	float width = fullSize.width;
 	float height = fullSize.height;
 	
 	if (NO) { // Just for debugging.
 		NSLog(@"Target orientation is %@, dimensions will be %.0f x %.0f", 
 			  [self nameOfInterfaceOrientation:theOrientation], width, height);
+
+		NSLog(@"Real orientation is %@, dimensions will be %.0f x %.0f", 
+			  [self nameOfInterfaceOrientation:[[UIApplication sharedApplication] statusBarOrientation]], width, height);
 	}
 	
 	// Layout the master, divider and detail views.
@@ -495,13 +499,13 @@
 
 - (void)layoutSubviewsWithAnimation:(BOOL)animate
 {
-	[self layoutSubviewsForInterfaceOrientation:self.interfaceOrientation withAnimation:animate];
+	[self layoutSubviewsForInterfaceOrientation:[[UIApplication sharedApplication] statusBarOrientation] withAnimation:animate];
 }
 
 
 - (void)layoutSubviews
 {
-	[self layoutSubviewsForInterfaceOrientation:self.interfaceOrientation withAnimation:YES];
+	[self layoutSubviewsForInterfaceOrientation:[[UIApplication sharedApplication] statusBarOrientation] withAnimation:YES];
 }
 
 
@@ -653,6 +657,10 @@
 		}
 		_dividerView.hidden = NO;
 	}
+    else if([animationID isEqualToString:MG_ANIMATION_TOGGLE])
+    {
+        [[NSNotificationCenter defaultCenter] postNotificationName:SPLITVIEW_DID_CHANGE object:self];
+    }
 }
 
 
@@ -701,7 +709,6 @@
 	}
 }
 
-
 - (IBAction)toggleMasterView:(id)sender
 {
 	if (_hiddenPopoverController && _hiddenPopoverController.popoverVisible) {
@@ -716,12 +723,15 @@
 	}
 	
 	// This action functions on the current primary orientation; it is independent of the other primary orientation.
-	[UIView beginAnimations:@"toggleMaster" context:nil];
+	[UIView beginAnimations:MG_ANIMATION_TOGGLE context:nil];
+    [UIView setAnimationDelegate:self];
+    [UIView setAnimationDidStopSelector:@selector(animationDidStop:finished:context:)];
 	if (self.isLandscape) {
 		self.showsMasterInLandscape = !_showsMasterInLandscape;
 	} else {
 		self.showsMasterInPortrait = !_showsMasterInPortrait;
 	}
+    [[NSNotificationCenter defaultCenter] postNotificationName:SPLITVIEW_WILL_CHANGE object:self];
 	[UIView commitAnimations];
 }
 
@@ -867,7 +877,7 @@
 	// Check to see if delegate wishes to constrain the position.
 	float newPosn = posn;
 	BOOL constrained = NO;
-	CGSize fullSize = [self splitViewSizeForOrientation:self.interfaceOrientation];
+	CGSize fullSize = [self splitViewSizeForOrientation:[[UIApplication sharedApplication] statusBarOrientation]];
 	if (_delegate && [_delegate respondsToSelector:@selector(splitViewController:constrainSplitPosition:splitViewSize:)]) {
 		newPosn = [_delegate splitViewController:self constrainSplitPosition:newPosn splitViewSize:fullSize];
 		constrained = YES; // implicitly trust delegate's response.
