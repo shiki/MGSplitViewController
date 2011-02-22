@@ -348,7 +348,9 @@
 			if (theView) {
 				theView.frame = detailRect;
 				if (!theView.superview) {
+					[controller viewWillAppear:NO];
 					[self.view insertSubview:theView aboveSubview:self.masterViewController.view];
+					[controller viewDidAppear:NO];
 				} else {
 					[self.view bringSubviewToFront:theView];
 				}
