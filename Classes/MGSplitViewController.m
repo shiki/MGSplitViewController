@@ -587,10 +587,21 @@
 		
 	} else if (!inPopover && _hiddenPopoverController && _barButtonItem) {
 		// I know this looks strange, but it fixes a bizarre issue with UIPopoverController leaving masterViewController's views in disarray.
-		[_hiddenPopoverController presentPopoverFromRect:CGRectZero inView:self.view permittedArrowDirections:UIPopoverArrowDirectionAny animated:NO];
+		if (self.view.window) {
+			[_hiddenPopoverController presentPopoverFromRect:CGRectZero inView:self.view permittedArrowDirections:UIPopoverArrowDirectionAny animated:NO];
+		}
 		
 		// Remove master from popover and destroy popover, if it exists.
 		[_hiddenPopoverController dismissPopoverAnimated:NO];
+		// Feed the popover controller a fake view controller, so it releases
+		// the original (master), and does its dark magic.
+		// This fixes bug when the master view controller is contextually wrong
+		// (the height of its top and bottom bars will be wrong) when a user
+		// launches app in portrait, opens a modal full-screen view controller
+		// in landscape, then closes the view controller in landscape.
+		// From monoceroi's fork on GitHub:
+		// https://github.com/monoceroi/MGSplitViewController
+		[_hiddenPopoverController setContentViewController:[[[UIViewController alloc] init] autorelease]];
 		[_hiddenPopoverController release];
 		_hiddenPopoverController = nil;
 		
