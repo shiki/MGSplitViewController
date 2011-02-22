@@ -1138,18 +1138,4 @@
 }
 
 
-@synthesize showsMasterInPortrait;
-@synthesize showsMasterInLandscape;
-@synthesize vertical;
-@synthesize delegate;
-@synthesize viewControllers;
-@synthesize masterViewController;
-@synthesize detailViewController;
-@synthesize dividerView;
-@synthesize splitPosition;
-@synthesize splitWidth;
-@synthesize allowsDraggingDivider;
-@synthesize dividerStyle;
-
-
 @end
